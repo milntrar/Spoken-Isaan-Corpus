@@ -1,0 +1,131 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun 24 14:18:17 2021
+
+@author: mraks
+"""
+#This project investigate the co-occurence of ka and information structure
+#Hypothesis: ka follows old/given information
+#prediction: ka will co-occur with pronouns/zero more than expected by chance
+#the results actually suggests that ka co-occur more with Overt NP subjects, most of which are old/given information
+
+#importing parts of Isaan corpus text in XML format 
+#there are 10 storties: 4 Pear Storeis, 2 folk tales, 3 misc
+
+import xml.etree.ElementTree as ET #import ElementTree
+
+tree = ET.parse("Isaan_Stories_Sample.xml")
+root = tree.getroot()
+corpus_text = ET.tostring(root, encoding ='utf8').decode('utf8')
+
+#extracting relevant information using the following function
+
+def Isaan_xml_dicter(text, splitter = None): #splitter is not used - it is only here to conform with other tokenizer functions so it will work with corpus_freq()
+	out_list = [] ##list for each token
+	root = ET.fromstring(text) #starting point in parse tree
+	
+	for x in root.iter(tag = "iword"): #iterate through the "iword" tags( thai script)
+		token = {}
+		for z in x.iter(tag = "item"):#iterate through another tag
+		#in this format, spaces are included in the "item" tag text.
+			word = z.text #get word text
+
+			if word == None: #in some cases, <item> tags don't have text.
+				continue #we will ignore these
+			else:
+				word = word.strip() #remove trailing spaces
+			
+			if z.get("lang")=="tts-Thai-baseline":#if the attribute "lang" is "tts-Thai-baseline" (Isaan words but Thai script)
+				token["word"] = word
+
+			elif z.get("lang") == "en-wordGloss":#if the attribute "lang" is "en-wordGloss" (Englis gloss)
+				token["gloss"] = word
+			
+			elif z.get("lang")== "en-wordCategory":#if you want part of speech as well
+				token["pos"] = word
+				
+			else:#if the attribute "lang" is something else
+				continue#ignore then
+				
+		if "word" not in token:#if the word (key) has no value
+			continue#ignore it
+		
+		if "gloss" not in token:#if the gloss(key) has no value
+			token["gloss"] = ""#put an empty string as the value
+		
+		if "pos" not in token:#if the pos (key) has no value
+			token["pos"] = "not.sure"#say not sure
+			
+		out_list.append(token)
+	return(out_list)
+
+isaan_dict_list = Isaan_xml_dicter(corpus_text)
+print(isaan_dict_list[:50])
+
+#extracting and merging word and gloss for concordances
+def extract_value(list_dict):
+	out_list = []
+	for token in list_dict:
+		pair = token["word"] + "_" + token["gloss"]
+		#for k,v in token.items():
+		out_list.append(pair)
+	return(out_list)
+
+isaan_word_list = extract_value(isaan_dict_list)
+print(isaan_word_list[:50])
+
+#generating concordances 
+import random
+random.seed(1) #set seed
+
+def concord(tok_list,target,nleft,nright):
+	hits = [] #empty list for search hits
+
+	for idx, x in enumerate(tok_list): #iterate through token list using the enumerate function. idx = list index, x = list item
+		if x in target: #if the item matches one of the target items
+
+			if idx < nleft: #deal with left context if search term comes early in a text
+				left = tok_list[:idx] #get x number of words before the current one (based on nleft)
+			else:
+				left = tok_list[idx-nleft:idx] #get x number of words before the current one (based on nleft)
+
+			t = x #set t as the item
+			right = tok_list[idx+1:idx+nright+1] #get x number of words after the current one (based on nright)
+			hits.append([left,t,right]) #append a list consisting of a list of left words, the target word, and a list of right words
+
+	return(hits)
+
+def corp_conc(input_list,target,nhits,nleft,nright):
+	hits = []
+
+	#filenames = glob.glob(corp_folder + "/*.txt") #make a list of all .txt file in corp_folder
+	#for filename in filenames: #iterate through filename
+	text = (input_list)
+		#add concordance hits for each text to corpus-level list:
+	for x in concord(text,target,nleft,nright): #here we use the concord() function to generate concordance lines
+		hits.append(x)
+
+	# now we generate the random sample
+	if len(hits) <= nhits: #if the number of search hits are less than or equal to the requested sample:
+		print("Search returned " + str(len(hits)) + " hits.\n Returning all " + str(len(hits)) + " hits")
+		return(hits) #return entire hit list
+	else:
+		print("Search returned " + str(len(hits)) + " hits.\n Returning a random sample of " + str(nhits) + " hits")
+		return(random.sample(hits,nhits)) #return the random sample
+
+ka_concord = concord(isaan_word_list, ["กะ_then"],5,5)#all the ka occurrences are still glossed as 'then' in the corpus
+
+
+#writing concordances files
+def write_concord(outname, conc_list):
+	outf = open(outname,"w", encoding ="utf8")
+	outf.write("left_context\tnode_word\tright_context") #write header (optional)
+	for x in conc_list:
+		left = " ".join(x[0]) #join the left context list into a string using spaces
+		target = x[1] #this is the node/target word
+		right = " ".join(x[2]) #join the left context list into a string using spaces
+		outf.write("\n" + left + "\t" + target + "\t" + right)
+	outf.flush()
+	outf.close()
+
+write_concord("ka_9_storeis.tsv",ka_concord)
