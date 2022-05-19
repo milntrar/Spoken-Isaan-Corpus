@@ -6,7 +6,7 @@
 
 import xml.etree.ElementTree as ET #import ElementTree
 
-tree = ET.parse("Isaan_spoken_corpus_2020.xml")
+tree = ET.parse("Isaan_spoken_corpus_2020.xml")#note that you'll want to make sure the file name matches that in your directory. For this particular analysis I used the 2020 version of the corpus.
 root = tree.getroot()
 corpus_text = ET.tostring(root, encoding ='utf8').decode('utf8')
 
