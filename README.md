@@ -8,7 +8,7 @@ The language data is written in Thai script with annotation for code-switching. 
 The XML version of the corpus is available for [download](https://github.com/milntrar/Spoken-Isaan-Corpus/blob/main/Spoken_Isaan_Corpus_2023.xml)
 
 ## Cite
-Raksachat, Milntra. 2023. Spoken Isaan Corpus. https://milntrar.github.io/Spoken-Isaan-Corpus/
+Raksachat, Milntra. 2023. Spoken Isaan Corpus. Version v2023.1.0. https://milntrar.github.io/Spoken-Isaan-Corpus/
 
 ## Questions?
 Send me an email (milntrar@uoregon.edu) and I'll try my best to respond in a timely manner.
